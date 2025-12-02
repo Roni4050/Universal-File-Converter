@@ -1,0 +1,345 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta name="google-site-verification" content="iNI9tpbyqqES6snUEPbYeKMEdxMgHm-IwY9pQz9uqH0" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Image & PDF Converter</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/pdf-lib/dist/pdf-lib.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.worker.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+      body {
+          font-family: 'Inter', sans-serif;
+      }
+      .upload-btn-wrapper {
+          position: relative;
+          overflow: hidden;
+          display: inline-block;
+      }
+      .btn-upload {
+          border: 2px solid #60A5FA;
+          color: #60A5FA;
+          background-color: white;
+          padding: 8px 20px;
+          border-radius: 8px;
+          font-size: 16px;
+          font-weight: bold;
+          cursor: pointer;
+          transition: background-color 0.3s, color 0.3s;
+      }
+      .btn-upload:hover {
+          background-color: #60A5FA;
+          color: white;
+      }
+      .upload-btn-wrapper input[type=file] {
+          font-size: 100px;
+          position: absolute;
+          left: 0;
+          top: 0;
+          opacity: 0;
+          cursor: pointer;
+      }
+      .loader {
+          border: 4px solid #f3f3f3;
+          border-top: 4px solid #3498db;
+          border-radius: 50%;
+          width: 24px;
+          height: 24px;
+          animation: spin 1s linear infinite;
+          display: none;
+      }
+      @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+      }
+      .custom-radio input[type="radio"] {
+          opacity: 0;
+          position: fixed;
+          width: 0;
+      }
+      .custom-radio label {
+          display: inline-block;
+          background-color: #4A5568;
+          padding: 10px 20px;
+          font-family: sans-serif, Arial;
+          font-size: 16px;
+          border: 2px solid #4A5568;
+          border-radius: 8px;
+          cursor: pointer;
+          transition: background-color 0.3s, border-color 0.3s;
+          color: #E2E8F0;
+      }
+      .custom-radio input[type="radio"]:checked + label {
+          background-color: #4299E1;
+          border-color: #2B6CB0;
+          color: white;
+      }
+      .custom-radio label:hover {
+          background-color: #2D3748;
+      }
+      .custom-radio input[type="radio"]:focus + label {
+          box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.5);
+      }
+  </style>
+</head>
+<body class="bg-gradient-to-br from-slate-900 to-slate-700 min-h-screen flex flex-col items-center justify-center p-4 text-white">
+    <div class="bg-slate-800 p-8 md:p-12 rounded-xl shadow-2xl w-full max-w-xl transform transition-all duration-500 hover:scale-105">
+        <header class="text-center mb-8">
+            <h1 class="text-3xl md:text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-500">Universal File Converter</h1>
+            <p class="text-slate-400 mt-2 text-sm md:text-base">Convert JPG to PDF or PDF to JPG with ease.</p>
+        </header>
+        <main>
+            <div class="mb-6">
+                <label class="block mb-3 text-sm font-medium text-slate-300">Select Conversion Mode:</label>
+                <div class="flex justify-center space-x-4 custom-radio">
+                    <div>
+                        <input type="radio" id="modeJpgToPdf" name="conversionMode" value="jpgToPdf" checked>
+                        <label for="modeJpgToPdf">JPG to PDF</label>
+                    </div>
+                    <div>
+                        <input type="radio" id="modePdfToJpg" name="conversionMode" value="pdfToJpg">
+                        <label for="modePdfToJpg">PDF to JPG</label>
+                    </div>
+                </div>
+            </div>
+            <div class="mb-6">
+                <label for="fileInput" id="fileInputLabel" class="block mb-2 text-sm font-medium text-slate-300">Upload JPG Image:</label>
+                <div class="upload-btn-wrapper w-full">
+                    <button id="uploadButtonDisplay" class="btn-upload w-full text-center py-3">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline-block mr-2" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM6.293 6.707a1 1 0 010-1.414l3-3a1 1 0 011.414 0l3 3a1 1 0 01-1.414 1.414L11 5.414V13a1 1 0 11-2 0V5.414L7.707 6.707a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+                        </svg>
+                        <span id="uploadButtonText">Choose JPG File</span>
+                    </button>
+                    <input type="file" id="fileInput" accept="image/jpeg, image/jpg" class="w-full rounded-lg cursor-pointer">
+                </div>
+                <p id="fileName" class="text-slate-500 text-xs mt-2 ml-1"></p>
+            </div>
+            <button id="convertButton" class="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-semibold py-3 px-4 rounded-lg shadow-md hover:shadow-lg transition duration-300 ease-in-out flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                <span id="convertButtonText">Convert to PDF</span>
+                <div id="loader" class="loader ml-3"></div>
+            </button>
+            <div id="statusMessage" class="mt-6 text-center text-sm"></div>
+            <div id="downloadLinkContainer" class="mt-4 text-center"></div>
+        </main>
+        <footer class="text-center mt-10 text-xs text-slate-500">
+            <p>&copy; <span id="currentYear"></span> Universal File Converter. All rights reserved.</p>
+        </footer>
+    </div>
+    <script>
+        // pdf-lib objects (for JPG to PDF)
+        const { PDFDocument, rgb, StandardFonts } = PDFLib;
+
+        // pdf.js setup (for PDF to JPG)
+        if (typeof pdfjsLib !== 'undefined') {
+            pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.worker.min.js';
+        } else {
+            console.error("pdf.js library is not loaded. PDF to JPG conversion will not work.");
+        }
+
+        const fileInput = document.getElementById('fileInput');
+        const convertButton = document.getElementById('convertButton');
+        const statusMessage = document.getElementById('statusMessage');
+        const downloadLinkContainer = document.getElementById('downloadLinkContainer');
+        const fileNameDisplay = document.getElementById('fileName');
+        const uploadButtonDisplay = document.getElementById('uploadButtonDisplay');
+        const uploadButtonText = document.getElementById('uploadButtonText');
+        const loader = document.getElementById('loader');
+        const convertButtonText = document.getElementById('convertButtonText');
+        const fileInputLabel = document.getElementById('fileInputLabel');
+        document.getElementById('currentYear').textContent = new Date().getFullYear();
+
+        const modeJpgToPdfRadio = document.getElementById('modeJpgToPdf');
+        const modePdfToJpgRadio = document.getElementById('modePdfToJpg');
+
+        let selectedFile = null;
+        let currentMode = 'jpgToPdf';
+
+        function updateUIMode() {
+            currentMode = document.querySelector('input[name="conversionMode"]:checked').value;
+            fileInput.value = '';
+            selectedFile = null;
+            fileNameDisplay.textContent = '';
+            downloadLinkContainer.innerHTML = '';
+            statusMessage.textContent = '';
+            convertButton.disabled = true;
+
+            if (currentMode === 'jpgToPdf') {
+                fileInputLabel.textContent = 'Upload JPG Image:';
+                uploadButtonText.textContent = 'Choose JPG File';
+                fileInput.accept = 'image/jpeg, image/jpg';
+                convertButtonText.textContent = 'Convert to PDF';
+            } else {
+                fileInputLabel.textContent = 'Upload PDF Document:';
+                uploadButtonText.textContent = 'Choose PDF File';
+                fileInput.accept = 'application/pdf';
+                convertButtonText.textContent = 'Convert to JPG';
+            }
+        }
+
+        modeJpgToPdfRadio.addEventListener('change', updateUIMode);
+        modePdfToJpgRadio.addEventListener('change', updateUIMode);
+
+        fileInput.addEventListener('change', (event) => {
+            selectedFile = event.target.files[0];
+            if (selectedFile) {
+                let isValid = false;
+                if (currentMode === 'jpgToPdf' && (selectedFile.type === "image/jpeg" || selectedFile.type === "image/jpg")) {
+                    isValid = true;
+                } else if (currentMode === 'pdfToJpg' && selectedFile.type === "application/pdf") {
+                    isValid = true;
+                }
+
+                if (isValid) {
+                    fileNameDisplay.textContent = `Selected: ${selectedFile.name}`;
+                    uploadButtonText.textContent = 'Change File';
+                    convertButton.disabled = false;
+                    statusMessage.textContent = '';
+                    downloadLinkContainer.innerHTML = '';
+                } else {
+                    fileNameDisplay.textContent = `Invalid file type. Please select a ${currentMode === 'jpgToPdf' ? 'JPG' : 'PDF'} file.`;
+                    uploadButtonText.textContent = `Choose ${currentMode === 'jpgToPdf' ? 'JPG' : 'PDF'} File`;
+                    convertButton.disabled = true;
+                    selectedFile = null;
+                    statusMessage.textContent = `Error: Please select a valid ${currentMode === 'jpgToPdf' ? 'JPG image' : 'PDF document'}.`;
+                    statusMessage.classList.remove('text-green-400', 'text-blue-400');
+                    statusMessage.classList.add('text-red-400');
+                }
+            } else {
+                fileNameDisplay.textContent = '';
+                uploadButtonText.textContent = `Choose ${currentMode === 'jpgToPdf' ? 'JPG' : 'PDF'} File`;
+                convertButton.disabled = true;
+                selectedFile = null;
+            }
+        });
+
+        convertButton.addEventListener('click', async () => {
+            if (!selectedFile) {
+                statusMessage.textContent = `Please select a ${currentMode === 'jpgToPdf' ? 'JPG' : 'PDF'} file first.`;
+                statusMessage.classList.remove('text-green-400', 'text-blue-400');
+                statusMessage.classList.add('text-red-400');
+                return;
+            }
+
+            loader.style.display = 'inline-block';
+            convertButtonText.textContent = 'Converting...';
+            convertButton.disabled = true;
+            statusMessage.textContent = 'Processing your file... please wait.';
+            statusMessage.classList.remove('text-red-400', 'text-green-400');
+            statusMessage.classList.add('text-blue-400');
+            downloadLinkContainer.innerHTML = '';
+
+            try {
+                if (currentMode === 'jpgToPdf') {
+                    await convertJpgToPdf();
+                } else {
+                    if (typeof pdfjsLib === 'undefined' || !pdfjsLib.GlobalWorkerOptions.workerSrc) {
+                        throw new Error("PDF processing library (pdf.js) is not properly loaded. Cannot convert PDF to JPG.");
+                    }
+                    await convertPdfToJpg();
+                }
+            } catch (error) {
+                console.error('Error during conversion:', error);
+                let userErrorMessage = `Conversion failed. Error: ${error.message}. Please try again or use a different file.`;
+                if (currentMode === 'jpgToPdf' && error.message && error.message.toLowerCase().includes('soi not found in jpeg')) {
+                    userErrorMessage = 'Conversion failed: The uploaded file does not appear to be a valid JPG image, or it might be corrupted. Please ensure it is a standard JPEG file, try a different JPG image, and then attempt conversion again.';
+                } else if (currentMode === 'pdfToJpg' && error.message) {
+                    userErrorMessage = `PDF to JPG conversion failed: ${error.message}. Please ensure it's a valid PDF and try again.`;
+                }
+                statusMessage.textContent = userErrorMessage;
+                statusMessage.classList.remove('text-green-400', 'text-blue-400');
+                statusMessage.classList.add('text-red-400');
+            } finally {
+                loader.style.display = 'none';
+                convertButtonText.textContent = currentMode === 'jpgToPdf' ? 'Convert to PDF' : 'Convert to JPG';
+                convertButton.disabled = true;
+                fileNameDisplay.textContent = `Select a new ${currentMode === 'jpgToPdf' ? 'JPG' : 'PDF'} to convert.`;
+                uploadButtonText.textContent = `Choose ${currentMode === 'jpgToPdf' ? 'JPG' : 'PDF'} File`;
+                selectedFile = null;
+                fileInput.value = '';
+            }
+        });
+
+        async function convertJpgToPdf() {
+            const jpgImageBytes = await selectedFile.arrayBuffer();
+            const pdfDoc = await PDFDocument.create();
+            const jpgImage = await pdfDoc.embedJpg(jpgImageBytes);
+            const jpgDims = jpgImage.scale(1);
+            const page = pdfDoc.addPage([jpgDims.width, jpgDims.height]);
+            page.drawImage(jpgImage, { x: 0, y: 0, width: jpgDims.width, height: jpgDims.height });
+            pdfDoc.setTitle(`Converted_${selectedFile.name.replace(/\.[^/.]+$/, "")}`);
+            pdfDoc.setAuthor('Universal File Converter');
+            pdfDoc.setSubject(`PDF version of ${selectedFile.name}`);
+            const pdfBytes = await pdfDoc.save();
+            const pdfBlob = new Blob([pdfBytes], { type: 'application/pdf' });
+            const pdfFileName = selectedFile.name.replace(/\.(jpg|jpeg)$/i, '.pdf');
+            displayDownloadLink(pdfBlob, pdfFileName, 'Download PDF');
+            statusMessage.textContent = 'JPG to PDF conversion successful! Your PDF is ready.';
+            statusMessage.classList.remove('text-red-400', 'text-blue-400');
+            statusMessage.classList.add('text-green-400');
+        }
+
+        async function convertPdfToJpg() {
+            const fileReader = new FileReader();
+            return new Promise((resolve, reject) => {
+                fileReader.onload = async function() {
+                    try {
+                        const typedarray = new Uint8Array(this.result);
+                        if (typeof pdfjsLib === 'undefined' || !pdfjsLib.getDocument) {
+                            reject(new Error("pdf.js library is not loaded correctly."));
+                            return;
+                        }
+                        const loadingTask = pdfjsLib.getDocument({data: typedarray});
+                        const pdf = await loadingTask.promise;
+                        if (pdf.numPages === 0) {
+                            throw new Error("The PDF has no pages to convert.");
+                        }
+                        const pageNumber = 1;
+                        const page = await pdf.getPage(pageNumber);
+                        const viewport = page.getViewport({ scale: 1.5 });
+                        const canvas = document.createElement('canvas');
+                        const context = canvas.getContext('2d');
+                        canvas.height = viewport.height;
+                        canvas.width = viewport.width;
+                        const renderContext = {
+                            canvasContext: context,
+                            viewport: viewport
+                        };
+                        await page.render(renderContext).promise;
+                        const jpgDataUrl = canvas.toDataURL('image/jpeg', 0.9);
+                        const jpgBlob = await (await fetch(jpgDataUrl)).blob();
+                        const jpgFileName = selectedFile.name.replace(/\.pdf$/i, '.jpg');
+                        displayDownloadLink(jpgBlob, jpgFileName, 'Download JPG');
+                        statusMessage.textContent = 'PDF to JPG conversion successful! Your JPG is ready.';
+                        statusMessage.classList.remove('text-red-400', 'text-blue-400');
+                        statusMessage.classList.add('text-green-400');
+                        resolve();
+                    } catch (error) {
+                        console.error("Error in PDF to JPG conversion process:", error);
+                        reject(error);
+                    }
+                };
+                fileReader.onerror = function() {
+                    reject(new Error("Failed to read the PDF file."));
+                };
+                fileReader.readAsArrayBuffer(selectedFile);
+            });
+        }
+
+        function displayDownloadLink(blob, fileName, linkText) {
+            const downloadLink = document.createElement('a');
+            downloadLink.href = URL.createObjectURL(blob);
+            downloadLink.download = fileName;
+            downloadLink.textContent = linkText;
+            downloadLink.className = "inline-block mt-4 px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-500 rounded-lg shadow-md hover:shadow-lg text-white font-semibold transition duration-300 ease-in-out";
+            downloadLink.style.textDecoration = 'none';
+            downloadLinkContainer.innerHTML = '';
+            downloadLinkContainer.appendChild(downloadLink);
+        }
+    </script>
+</body>
+</html>
